@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "jiyu-backend"
+version = "0.1.0"
+description = ""
+authors = ["Bharath Sriraam R R <albharath.1305@gmail.com>"]
+readme = "README.md"
+packages = [{include = "jiyu_backend"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.99.1"
+python-dotenv = "^1.0.0"
+langchain = "^0.0.227"
+uvicorn = "^0.22.0"
+supabase = "^1.0.3"
+openai = "^0.27.8"
+tiktoken = "^0.4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
