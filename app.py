@@ -46,6 +46,6 @@ def home():
 
 @app.get("/search")
 def search(query: str):
-    docs = vectorstore.similarity_search(query)
+    docs = vectorstore.similarity_search(query, filter={"blockId": "l136hn5j24n"})
 
     return docs[0].page_content

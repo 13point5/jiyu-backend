@@ -26,7 +26,7 @@ class CustomSupabaseVectorStore(SupabaseVectorStore):
             {
                 "query_embedding": query_embedding,
                 "match_count": k,
-                "filter": {"blockId": "k3u46gu4bg"},
+                "filter": kwargs.get("filter", {}),
             },
         ).execute()
 
