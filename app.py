@@ -2,13 +2,18 @@ import os
 from dotenv import load_dotenv
 
 from typing import Union
+from pydantic import BaseModel, Field
 
 from supabase.client import Client, create_client
 
 from vectorstore import CustomSupabaseVectorStore
+import utils
+
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
+from langchain.agents import initialize_agent, Tool
+from langchain.agents import AgentType
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,13 +46,15 @@ vectorstore = CustomSupabaseVectorStore(
 )
 
 blockId = "k3u46gu4bg"
+query = "What is the summary of <@block:{}>?".format(blockId)
+
+query = "What is the difference between the key ideas in <@block:{}> and <@block:{}>?".format(
+    "pdf_cognitivism", "l136hn5j24n"
+)
+
 # blockId = "l136hn5j24n"
 
-qa = RetrievalQA.from_chain_type(
-    llm=ChatOpenAI(model="gpt-3.5-turbo-0613"),
-    chain_type="stuff",
-    retriever=vectorstore.as_retriever(search_kwargs={"filter": {"blockId": blockId}}),
-)
+chat_llm = ChatOpenAI(model="gpt-3.5-turbo-0613")
 
 
 @app.get("/")
@@ -55,6 +62,38 @@ def home():
     return "sup"
 
 
+class BlockTool(BaseModel):
+    question: str = Field()
+
+
 @app.get("/search")
-def search(query: str):
-    return qa.run(query)
+def search():
+    mention_ids = utils.extract_mention_ids(query)
+    print("Query: {}".format(query))
+
+    tools = [
+        Tool(
+            name="get_info_about_block_{}".format(mention_id),
+            func=RetrievalQA.from_chain_type(
+                llm=chat_llm,
+                chain_type="stuff",
+                retriever=vectorstore.as_retriever(
+                    search_kwargs={"filter": {"blockId": mention_id}}
+                ),
+            ).run,
+            args_schema=BlockTool,
+            description="useful for finding information about block {}".format(
+                mention_id
+            ),
+        )
+        for mention_id in mention_ids
+    ]
+
+    mrkl = initialize_agent(
+        tools,
+        llm=chat_llm,
+        agent=AgentType.OPENAI_FUNCTIONS,
+        verbose=True,
+    )
+
+    return mrkl.run(query)
