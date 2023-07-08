@@ -7,6 +7,8 @@ from supabase.client import Client, create_client
 
 from vectorstore import CustomSupabaseVectorStore
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.chains import RetrievalQA
+from langchain.chat_models import ChatOpenAI
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,6 +40,15 @@ vectorstore = CustomSupabaseVectorStore(
     client=supabase, table_name="documents", embedding=embeddings
 )
 
+blockId = "k3u46gu4bg"
+# blockId = "l136hn5j24n"
+
+qa = RetrievalQA.from_chain_type(
+    llm=ChatOpenAI(model="gpt-3.5-turbo-0613"),
+    chain_type="stuff",
+    retriever=vectorstore.as_retriever(search_kwargs={"filter": {"blockId": blockId}}),
+)
+
 
 @app.get("/")
 def home():
@@ -46,6 +57,4 @@ def home():
 
 @app.get("/search")
 def search(query: str):
-    docs = vectorstore.similarity_search(query, filter={"blockId": "l136hn5j24n"})
-
-    return docs[0].page_content
+    return qa.run(query)

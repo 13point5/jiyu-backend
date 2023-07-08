@@ -21,6 +21,8 @@ class CustomSupabaseVectorStore(SupabaseVectorStore):
         vectors = self._embedding.embed_documents([query])
         query_embedding = vectors[0]
 
+        print("kwargs: ", kwargs)
+
         res = self._client.rpc(
             self.query_name,
             {
