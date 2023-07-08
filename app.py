@@ -47,15 +47,16 @@ vectorstore = CustomSupabaseVectorStore(
 )
 
 blockId = "k3u46gu4bg"
-query = "What is the summary of <@block:{}>?".format(blockId)
+# blockId = "l136hn5j24n"
+# query = "What is the summary of <@block:{}>?".format(blockId)
 
 query = "What is the difference between the key ideas in <@block:{}> and <@block:{}>?".format(
     "pdf_cognitivism", "l136hn5j24n"
 )
 
-# blockId = "l136hn5j24n"
 
-chat_llm = ChatOpenAI(model="gpt-3.5-turbo-0613")
+gpt_3 = ChatOpenAI(model="gpt-3.5-turbo-16k-0613")
+gpt_4 = ChatOpenAI(model="gpt-4")
 
 
 @app.get("/")
@@ -70,7 +71,7 @@ class BlockTool(BaseModel):
 def block_tool_func(retriever, source_docs):
     def actual_tool_func(question: str):
         res = RetrievalQA.from_chain_type(
-            llm=chat_llm,
+            llm=gpt_3,
             chain_type="stuff",
             retriever=retriever,
             return_source_documents=True,
@@ -98,14 +99,6 @@ def search():
                 ),
                 source_docs=source_docs,
             ),
-            # func=RetrievalQA.from_chain_type(
-            #     llm=chat_llm,
-            #     chain_type="stuff",
-            #     retriever=vectorstore.as_retriever(
-            #         search_kwargs={"filter": {"blockId": mention_id}}
-            #     ),
-            #     return_source_documents=True,
-            # ),
             args_schema=BlockTool,
             description="useful for finding information about block {}".format(
                 mention_id
@@ -116,8 +109,7 @@ def search():
 
     mrkl = initialize_agent(
         tools,
-        # llm=ChatOpenAI(model="gpt-4"),
-        llm=chat_llm,
+        llm=gpt_4,
         agent=AgentType.OPENAI_FUNCTIONS,
         verbose=True,
         return_intermediate_steps=True,
