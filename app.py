@@ -15,6 +15,9 @@ from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
+from langchain.schema.messages import (
+    SystemMessage,
+)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,12 +49,16 @@ vectorstore = CustomSupabaseVectorStore(
     client=supabase, table_name="documents", embedding=embeddings
 )
 
-blockId = "k3u46gu4bg"
-# blockId = "l136hn5j24n"
+block1 = "k3u46gu4bg"
+block2 = "l136hn5j24n"
+block3 = "pdf_cognitivism"
 # query = "What is the summary of <@block:{}>?".format(blockId)
 
 query = "What is the difference between the key ideas in <@block:{}> and <@block:{}>?".format(
     "pdf_cognitivism", "l136hn5j24n"
+)
+query = "How are the key ideas in <@block:{}> and <@block:{}> related?".format(
+    block2, block3
 )
 
 
@@ -92,7 +99,8 @@ def search():
 
     tools = [
         Tool(
-            name="get_info_about_block_{}".format(mention_id),
+            name="answer_question_about_block_{}".format(mention_id),
+            # name="get_info_about_block_{}".format(mention_id),
             func=block_tool_func(
                 retriever=vectorstore.as_retriever(
                     search_kwargs={"filter": {"blockId": mention_id}}
@@ -100,9 +108,12 @@ def search():
                 source_docs=source_docs,
             ),
             args_schema=BlockTool,
-            description="useful for finding information about block {}".format(
+            description="useful for answering questions about block {}".format(
                 mention_id
             ),
+            # description="useful for finding information about block {}".format(
+            #     mention_id
+            # ),
         )
         for mention_id in mention_ids
     ]
@@ -111,6 +122,12 @@ def search():
         tools,
         llm=gpt_4,
         agent=AgentType.OPENAI_FUNCTIONS,
+        agent_kwargs={
+            "system_message": SystemMessage(
+                content="You are a helpful AI assistant. A block is a reference to a document that contains information about it. When you respond to queries that mention blocks in the format <@block:BLOCK_ID>, you need to ensure that your response references the blocks in the same format."
+            )
+        },
+        max_iterations=len(mention_ids) + 1,
         verbose=True,
         return_intermediate_steps=True,
     )
