@@ -5,7 +5,7 @@ from typing import Union
 
 from supabase.client import Client, create_client
 
-from langchain.vectorstores import SupabaseVectorStore
+from vectorstore import CustomSupabaseVectorStore
 from langchain.embeddings.openai import OpenAIEmbeddings
 
 from fastapi import FastAPI
@@ -34,7 +34,7 @@ supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_PRIVATE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
-vectorstore = SupabaseVectorStore(
+vectorstore = CustomSupabaseVectorStore(
     client=supabase, table_name="documents", embedding=embeddings
 )
 
