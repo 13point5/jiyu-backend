@@ -92,20 +92,20 @@ def search():
     tools = [
         Tool(
             name="get_info_about_block_{}".format(mention_id),
-            # func=block_tool_func(
-            #     retriever=vectorstore.as_retriever(
-            #         search_kwargs={"filter": {"blockId": mention_id}}
-            #     ),
-            #     source_docs=source_docs,
-            # ),
-            func=RetrievalQA.from_chain_type(
-                llm=chat_llm,
-                chain_type="stuff",
+            func=block_tool_func(
                 retriever=vectorstore.as_retriever(
                     search_kwargs={"filter": {"blockId": mention_id}}
                 ),
-                return_source_documents=True,
+                source_docs=source_docs,
             ),
+            # func=RetrievalQA.from_chain_type(
+            #     llm=chat_llm,
+            #     chain_type="stuff",
+            #     retriever=vectorstore.as_retriever(
+            #         search_kwargs={"filter": {"blockId": mention_id}}
+            #     ),
+            #     return_source_documents=True,
+            # ),
             args_schema=BlockTool,
             description="useful for finding information about block {}".format(
                 mention_id
@@ -116,7 +116,8 @@ def search():
 
     mrkl = initialize_agent(
         tools,
-        llm=ChatOpenAI(model="gpt-4"),
+        # llm=ChatOpenAI(model="gpt-4"),
+        llm=chat_llm,
         agent=AgentType.OPENAI_FUNCTIONS,
         verbose=True,
         return_intermediate_steps=True,
