@@ -1,3 +1,4 @@
+import json
 import os
 from dotenv import load_dotenv
 
@@ -66,21 +67,37 @@ class BlockTool(BaseModel):
     question: str = Field()
 
 
+def block_tool_func(retriever, source_docs):
+    def actual_tool_func(question: str):
+        res = RetrievalQA.from_chain_type(
+            llm=chat_llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True,
+        )(question)
+
+        source_docs.append(res["source_documents"])
+        return res["result"]
+
+    return actual_tool_func
+
+
 @app.get("/search")
 def search():
     mention_ids = utils.extract_mention_ids(query)
     print("Query: {}".format(query))
 
+    source_docs = []
+
     tools = [
         Tool(
             name="get_info_about_block_{}".format(mention_id),
-            func=RetrievalQA.from_chain_type(
-                llm=chat_llm,
-                chain_type="stuff",
+            func=block_tool_func(
                 retriever=vectorstore.as_retriever(
                     search_kwargs={"filter": {"blockId": mention_id}}
                 ),
-            ).run,
+                source_docs=source_docs,
+            ),
             args_schema=BlockTool,
             description="useful for finding information about block {}".format(
                 mention_id
@@ -94,6 +111,9 @@ def search():
         llm=chat_llm,
         agent=AgentType.OPENAI_FUNCTIONS,
         verbose=True,
+        return_intermediate_steps=True,
     )
 
-    return mrkl.run(query)
+    res = mrkl({"input": query})
+    print(source_docs)
+    return res["output"]
