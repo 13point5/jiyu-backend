@@ -90,8 +90,13 @@ def block_tool_func(retriever, source_docs):
     return actual_tool_func
 
 
+class SearchResponse(BaseModel):
+    output: str
+    source_docs: list
+
+
 @app.get("/search")
-def search():
+def search() -> SearchResponse:
     mention_ids = utils.extract_mention_ids(query)
     print("Query: {}".format(query))
 
@@ -133,6 +138,8 @@ def search():
     )
 
     res = mrkl({"input": query})
-    print(res)
-    print(source_docs)
-    return res["output"]
+    # print(res)
+    # print(source_docs)
+    # return res["output"]
+
+    return SearchResponse(output=res["output"], source_docs=source_docs)
