@@ -1,8 +1,6 @@
-import json
 import os
 from dotenv import load_dotenv
 
-from typing import Union
 from pydantic import BaseModel, Field
 
 from supabase.client import Client, create_client
@@ -10,9 +8,8 @@ from supabase.client import Client, create_client
 from vectorstore import CustomSupabaseVectorStore
 import utils
 
-from langchain import PromptTemplate
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.chains import RetrievalQA, LLMChain
+from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
@@ -29,6 +26,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:3001",
 ]
 
 app.add_middleware(
